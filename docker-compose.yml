@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: asesorias-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: asesorias_db
+      MYSQL_USER: asesorias_user
+      MYSQL_PASSWORD: asesorias_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - asesorias-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asesorias-api
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: asesorias_db
+      DB_USER: asesorias_user
+      DB_PASSWORD: asesorias_pass
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - asesorias-network
+
+networks:
+  asesorias-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
